@@ -1,0 +1,75 @@
+<%= form_with(model: order, remote: true) do |form| %> 
+
+  <% if order.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(order.errors.count, "error") %> prohibited this order from being saved:</h2>
+
+      <ul>
+      <% order.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+  
+  <div class="field">
+    <%= form.label :"Customer Name" %>
+    <%= form.text_field :name, id: :order_name %>
+  </div>
+
+  <div class="field">
+    <%= form.label :Email %>
+    <%= form.text_field :email, id: :order_email %>
+  </div>
+  <%= form.hidden_field :list, id: :order_list %>
+  
+  <!-- use psql hstore is better with json data type -->
+  <!--  <%= react_component('QuantityBox') %> -->
+  <!-- <%= react_component('HelloMessage', name: 'Judy') %> -->
+  <table id="order-item-table">
+    <tr>   
+      <th></th>
+      <th>Pizza</th>
+      <th>Price</th>
+      <th>Quantity</th>   
+    </tr>
+  <% Pizza.all.each do |pizza| %>
+         <tr>
+         <td><%= form.label  pizza.id %></td>
+         <td><%= form.label  pizza.name %></td>
+         <td><%= form.label  pizza.price %></td>
+         <td><%= react_component "QuantityBox", {price: pizza.price} %></td>
+         </tr>
+  <% end %>
+  </table>
+
+  <div class="actions">
+    <%= form.label :Total %>
+    $<%= form.text_field :total, id: :order_total,  :value => 0, :readonly => true  %>
+  </div>
+   
+  <input type="submit" id="checkout" name="commit" value="Place Order" data-disable-with="Checkout">
+  </div>
+
+<% end %>
+
+<script type="text/javascript">
+$(function() {
+  $("#checkout").click(function() {
+    var itemList = new Array();
+
+    $('#order-item-table tr').each(function(row, tr){
+      var quantity = $(tr).find('td:eq(3)').text().match(/\–(.*)\+/g);
+      if (quantity != null){ quantity = quantity.toString().replace('+', '').replace('–', ''); }
+      itemList[row]={
+          "id" : $(tr).find('td:eq(0)').text()
+          , "name" :$(tr).find('td:eq(1)').text()
+          , "price" : $(tr).find('td:eq(2)').text()
+          , "quantity" : quantity
+      }   
+    }); 
+    document.getElementById("order_list").value = JSON.stringify(itemList);
+  
+  });
+});
+</script>
